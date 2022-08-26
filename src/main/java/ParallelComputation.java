@@ -21,7 +21,7 @@ public class ParallelComputation {
 
         assignmentFlags = new boolean[siteCount];
         siteCount = site;
-        clusters = new ArrayList<Cluster>();
+        clusters = new ArrayList<>();
         processorCount = Runtime.getRuntime().availableProcessors();
         changeFlags = new boolean[processorCount];
         this.executorBind = Executors.newFixedThreadPool(processorCount);
@@ -75,22 +75,7 @@ public class ParallelComputation {
              Arrays.fill(changeFlags, false);
              //assignment step
              bindCluster();
-             //TODO add stopping condition check here
-
-
-             //gonna loop through sites sequentially and add one by one
-             for (Site site: sitePoints) {
-                 clusters.get(site.getClusterID()).addSite(site);
-             }
-
-
-
-             //update step
-             updateCentroid();
-
-             //checking whether any centroids changed their coordinates
-             //initializing "changed" flag to false at the beginning of each iteration
-             //since its update is based on the "OR folding"
+             //stopping condition check here
              changed = false;
              for (boolean changeFlag : changeFlags) {
                  if (changeFlag) {
@@ -98,6 +83,17 @@ public class ParallelComputation {
                      break;
                  }
              }
+
+             //only in case changes happened in the assignment step
+             if (changed) {
+                 //loop through sites sequentially and add one by one
+                 for (Site site : sitePoints) {
+                     clusters.get(site.getClusterID()).addSite(site);
+                 }
+                 //update step
+                 updateCentroid();
+             }
+
          } while(changed);
         Timestamp end = new Timestamp(System.currentTimeMillis());
         time = (int) (end.getTime() - start.getTime());
@@ -109,7 +105,7 @@ public class ParallelComputation {
         CountDownLatch barrierBind = new CountDownLatch(processorCount);
         //re-initializing cluster
         for (Cluster cluster: clusters) {
-            cluster.setSites(new ArrayList<Site>());
+            cluster.setSites(new ArrayList<>());
         }
         //assignment
         for(int t = 0; t < processorCount; t++ ) {
