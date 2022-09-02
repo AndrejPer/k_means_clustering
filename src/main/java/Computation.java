@@ -7,6 +7,7 @@ public class Computation {
     int clusterCount, siteCount, loopCounter;
     ArrayList<Cluster> clusters;
     private int time;
+    private long memory;
 
     public Computation(int cluster,int site) {
         clusterCount = cluster;
@@ -27,9 +28,13 @@ public class Computation {
         return time;
     }
 
+    public long getMemory() {return memory;}
+
     public void compute() {
+
+
         //initializing cluster centers to random sites
-        Random rand = new Random();
+        Random rand = new Random(10);
         //using set to assure no repeating numbers
         HashSet<Integer> randInts = new HashSet<>();
         //get random non-repeating indices
@@ -52,6 +57,11 @@ public class Computation {
         loopCounter = 0;
         boolean changed;
         Timestamp start = new Timestamp(System.currentTimeMillis());
+
+        //TODO check if start of memory measuring is ok
+        //--------------- memory start
+        long startMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        //-------------------------------
          do {
              //initializing "changed" flag to false at the beginning of each iteration
              changed = false;
@@ -63,6 +73,14 @@ public class Computation {
              for (Cluster cluster: clusters) cluster.updateCentroid();
 
         } while(changed);
+
+        //TODO check if start of memory measuring is ok
+        //--------------- memory start
+        long endMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        //-------------------------------
+
+        memory = endMemory - startMemory;
+
         Timestamp end = new Timestamp(System.currentTimeMillis());
         time = (int) (end.getTime() - start.getTime());
     }
@@ -87,10 +105,7 @@ public class Computation {
                 }
             }
             //check stopping cond
-            if(minCluster.getClusterID() != currentCluster.getClusterID()) {
-                flag = true;
-            }
-
+            if(minCluster != currentCluster) flag = true;
 
             //binding site and cluster
             minCluster.getSites().ensureCapacity(siteCount/2); minCluster.addSite(site);

@@ -1,3 +1,4 @@
+
 import org.jxmapviewer.JXMapViewer;
 import org.jxmapviewer.OSMTileFactoryInfo;
 import org.jxmapviewer.input.*;
@@ -5,13 +6,12 @@ import org.jxmapviewer.viewer.DefaultTileFactory;
 import org.jxmapviewer.viewer.GeoPosition;
 import org.jxmapviewer.viewer.TileFactoryInfo;
 import org.jxmapviewer.viewer.WaypointPainter;
+
 import javax.swing.JFrame;
 import javax.swing.event.MouseInputListener;
-import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -88,7 +88,6 @@ public class MapLoader {
             if(cluster.getWeight() > max) max = cluster.getWeight();
             totalW += cluster.getWeight();
             }
-        //System.out.println(min + ", " + max + ", " + totalW);
 
         for (Cluster cluster: clusters) {
             GeoPosition geoPosition = new GeoPosition(cluster.getCentroid().getLatitude(), cluster.getCentroid().getLongitude());

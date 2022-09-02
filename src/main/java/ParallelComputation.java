@@ -1,3 +1,5 @@
+
+
 import java.awt.*;
 import java.sql.Timestamp;
 import java.util.*;
@@ -10,6 +12,7 @@ public class ParallelComputation {
     private ArrayList<Site> sitePoints;
     private final ArrayList<Cluster> clusters;
     private int clusterCount, siteCount, processorCount, chunkSize, time, loopCounter;
+    private long memory;
     static boolean[] changeFlags, assignmentFlags;
     private ExecutorService executorBind, executorCluster;
     boolean[] siteFlags;
@@ -18,7 +21,6 @@ public class ParallelComputation {
     //constructor
     public ParallelComputation(int cluster,int site) {
         clusterCount = cluster;
-
         assignmentFlags = new boolean[siteCount];
         siteCount = site;
         clusters = new ArrayList<>();
@@ -37,14 +39,17 @@ public class ParallelComputation {
     public int getLoopCounter() {
         return loopCounter;
     }
+    public long getMemory() {return memory;}
 
     //computation
     public void compute() {
         //initializing data points
         sitePoints = SiteLoader.getInstance().loadSites(siteCount);
 
+
+
         //initializing cluster centers to random sites
-        Random rand = new Random();
+        Random rand = new Random(10);
         //using set to assure no repeating numbers
         HashSet<Integer> randInts = new HashSet<>();
         //get random non-repeating indices
@@ -67,6 +72,13 @@ public class ParallelComputation {
         loopCounter = 0;
         boolean changed;
         Timestamp start = new Timestamp(System.currentTimeMillis());
+
+        //TODO check if start of memory measuring is ok
+        //--------------- memory start
+        long startMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        //-------------------------------
+
+
          do {
              loopCounter++;
              if(loopCounter > 1000) break;
@@ -95,6 +107,14 @@ public class ParallelComputation {
              }
 
          } while(changed);
+
+        //TODO check if start of memory measuring is ok
+        //--------------- memory start
+        long endMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        //-------------------------------
+
+        memory = endMemory - startMemory;
+
         Timestamp end = new Timestamp(System.currentTimeMillis());
         time = (int) (end.getTime() - start.getTime());
         executorBind.shutdown();
@@ -152,7 +172,7 @@ public class ParallelComputation {
                 //verify stopping condition
                 //no need to worry about race condition, they access disjoint set;
                 //initial site's cluster ID should be 0
-                if(minCluster.getClusterID() != currentCluster.getClusterID()) {
+                if(minCluster != currentCluster) {
                     int id = start / chunkSize;
                     if(!changeFlags[id]) {
                         changeFlags[id] = true;

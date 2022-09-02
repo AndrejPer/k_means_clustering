@@ -30,7 +30,7 @@ public class SiteLoader {
         try{
             String file = Objects.requireNonNull(SiteLoader.class.getClassLoader().getResource("sites.json")).getFile();
             JSONArray jsonArray = (JSONArray) parser.parse(new FileReader(file));
-            Random random = new Random();
+            Random random = new Random(10);
 
             double minLat = Double.MAX_VALUE, maxLat = Double.MIN_VALUE,
                     minLng = Double.MAX_VALUE, maxLng = Double.MIN_VALUE,
@@ -48,7 +48,6 @@ public class SiteLoader {
                 if (lng > maxLng) maxLng = lng;
                 double capacity = parseDouble(element.get("capacity").toString());
                 if (capacity > maxCapacity) maxCapacity = capacity;
-                //System.out.println("gonna assign id " + siteID);
                 Site site = new Site(
                         lat,
                         lng,
@@ -59,8 +58,6 @@ public class SiteLoader {
 
             //in case more sites needed than in databse, generating random sites
             siteCount -= sites.size();
-            //System.out.println(siteCount + " is the site count");
-            //System.out.println("min-max: " + minLat + " " + maxLat + " " + minLng + " " + maxLng + " " + maxCapacity);
             while(siteCount > 0) {
                 double capacity = Double.MIN_VALUE + random.nextFloat() * 100;
                 //System.out.println("weight to insert: " + capacity);
