@@ -9,6 +9,7 @@ import org.jxmapviewer.viewer.WaypointPainter;
 
 import javax.swing.JFrame;
 import javax.swing.event.MouseInputListener;
+import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -79,7 +80,8 @@ public class MapLoader {
         for (Site site : sites) {
             GeoPosition geoPosition = new GeoPosition(site.getLatitude(), site.getLongitude());
             geoPositionSet.add(geoPosition);
-            wayPointsSet.add(new SwingWaypoint(site.getSiteID(), geoPosition, clusters.get(site.getClusterID()).getColor(), 5));
+            //TODO change if using graphics
+            wayPointsSet.add(new SwingWaypoint(site.getSiteID(), geoPosition, Color.BLACK, 5));
         }
 
         double min = Double.MAX_VALUE, max = Double.MIN_VALUE, totalW = 0;
@@ -91,7 +93,8 @@ public class MapLoader {
 
         for (Cluster cluster: clusters) {
             GeoPosition geoPosition = new GeoPosition(cluster.getCentroid().getLatitude(), cluster.getCentroid().getLongitude());
-            wayPointsSet.add(new SwingWaypoint(-1, geoPosition, cluster.getColor(), (int) (cluster.getWeight()/totalW * 23.0 * clusters.size())));
+            //TODO change if using graphics
+            wayPointsSet.add(new SwingWaypoint(-1, geoPosition, Color.BLACK, (int) (cluster.getWeight()/totalW * 23.0 * clusters.size())));
         }
 
         //setting overlay painter

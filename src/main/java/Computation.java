@@ -41,17 +41,23 @@ public class Computation {
         while(randInts.size() < clusterCount) {
             randInts.add(rand.nextInt(sitePoints.size()));
         }
+        /* GUI RELATED COLORING OF CLUSTERS
         //create a set of colors of corresponding size for coloring the clusters
         HashSet<Color> colors = new HashSet<>();
         for (int i = 0; i < clusterCount; i++) {
             colors.add(new Color(rand.nextFloat(), rand.nextFloat(), rand.nextFloat()));
         }
+
+        Iterator<Color> colorIterator = colors.iterator();
+        */
+
+
         //add sites at given indexes as initial clusters
         int id = 0;
-        Iterator<Color> colorIterator = colors.iterator();
         for (Integer i: randInts) {
-            clusters.add(new Cluster(sitePoints.get(i), colorIterator.next(), id++));
+            clusters.add(new Cluster(sitePoints.get(i), id++)); //adding color blue as default
         }
+
 
 
         loopCounter = 0;

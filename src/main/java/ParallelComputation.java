@@ -1,5 +1,3 @@
-
-
 import java.awt.*;
 import java.sql.Timestamp;
 import java.util.*;
@@ -47,7 +45,6 @@ public class ParallelComputation {
         sitePoints = SiteLoader.getInstance().loadSites(siteCount);
 
 
-
         //initializing cluster centers to random sites
         Random rand = new Random(10);
         //using set to assure no repeating numbers
@@ -56,16 +53,22 @@ public class ParallelComputation {
         while(randInts.size() < clusterCount) {
             randInts.add(rand.nextInt(sitePoints.size()));
         }
+
+        /* GUI RELATED COLOR SETTING
         //create a set of colors of corresponding size for coloring the clusters
         HashSet<Color> colors = new HashSet<>();
         for (int i = 0; i < clusterCount; i++) {
             colors.add(new Color(rand.nextFloat(), rand.nextFloat(), rand.nextFloat()));
         }
+
+        Iterator<Color> colorIterator = colors.iterator();
+         */
+
+
         //add sites at given indexes as initial clusters
         int id = 0;
-        Iterator<Color> colorIterator = colors.iterator();
         for (Integer i: randInts) {
-            clusters.add(new Cluster(sitePoints.get(i), colorIterator.next(), id++));
+            clusters.add(new Cluster(sitePoints.get(i), id++));
         }
 
         //calculating k means

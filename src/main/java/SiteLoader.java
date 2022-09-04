@@ -29,6 +29,7 @@ public class SiteLoader {
 
         try{
             String file = Objects.requireNonNull(SiteLoader.class.getClassLoader().getResource("sites.json")).getFile();
+            //System.out.println(file);
             JSONArray jsonArray = (JSONArray) parser.parse(new FileReader(file));
             Random random = new Random(10);
 

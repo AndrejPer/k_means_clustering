@@ -1,4 +1,6 @@
 # Project exclude paths
 /target/
-.idea
-test
+.idea/
+test/
+/out/
+/src/main/java/META-INF

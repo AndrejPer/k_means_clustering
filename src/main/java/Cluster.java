@@ -5,14 +5,14 @@ public class Cluster {
     private Site centroid;
     private ArrayList<Site> sites;
     private final int clusterID;
-    private final Color color;
+    //private final Color color;
 
 
-    public Cluster(Site initial, Color color, int id) {
+    public Cluster(Site initial, int id) {
         this.centroid = new Site(initial.getLatitude(), initial.getLongitude(), 0, -1);
         this.sites = new ArrayList<>();
         this.clusterID = id;
-        this.color = color;
+        //this.color = color;
 
     }
 
@@ -28,9 +28,7 @@ public class Cluster {
         return clusterID;
     }
 
-    public Color getColor() {
-        return color;
-    }
+    //public Color getColor() {return color;}
 
     public double getWeight() { return this.centroid.getWeight();}
 
