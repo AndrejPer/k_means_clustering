@@ -81,7 +81,7 @@ public class MapLoader {
             GeoPosition geoPosition = new GeoPosition(site.getLatitude(), site.getLongitude());
             geoPositionSet.add(geoPosition);
             //TODO change if using graphics
-            wayPointsSet.add(new SwingWaypoint(site.getSiteID(), geoPosition, Color.BLACK, 5));
+            wayPointsSet.add(new SwingWaypoint(site.getSiteID(), geoPosition, clusters.get(site.getClusterID()).getColor(), 5));
         }
 
         double min = Double.MAX_VALUE, max = Double.MIN_VALUE, totalW = 0;
@@ -94,7 +94,7 @@ public class MapLoader {
         for (Cluster cluster: clusters) {
             GeoPosition geoPosition = new GeoPosition(cluster.getCentroid().getLatitude(), cluster.getCentroid().getLongitude());
             //TODO change if using graphics
-            wayPointsSet.add(new SwingWaypoint(-1, geoPosition, Color.BLACK, (int) (cluster.getWeight()/totalW * 23.0 * clusters.size())));
+            wayPointsSet.add(new SwingWaypoint(-1, geoPosition, cluster.getColor(), (int) (cluster.getWeight()/totalW * 23.0 * clusters.size())));
         }
 
         //setting overlay painter

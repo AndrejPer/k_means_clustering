@@ -9,7 +9,7 @@ public class TestFactory {
             clusterStep = 100,
             siteFixed = 100000,
             clusterFixed = 100,
-            id = 100;
+            id = 200;
 
     /*
     TestFactory(int numberOfRepetitions, int numberOfIterations, int siteStep, int clusterStep, int siteFixed, int clusterFixed) {
@@ -47,7 +47,6 @@ public class TestFactory {
             id++;
         }
 
-         */
 
         for(int i = 1; i <= numberOfIterations; i++) {
             //System.out.println("para loop " + i);
@@ -66,6 +65,7 @@ public class TestFactory {
             file.flush();
             id++;
         }
+        */
 
 
         //varying clusters

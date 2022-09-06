@@ -1,16 +1,8 @@
 import mpi.MPI;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
 import java.awt.*;
-import java.io.FileReader;
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
 
-import static java.lang.Double.parseDouble;
 
 public class DistributedComputation {
     static ArrayList<Site> sitePoints;
@@ -23,13 +15,14 @@ public class DistributedComputation {
 
 
     public static void main(String[] args) {
+        System.out.println(Arrays.toString(args));
         MPI.Init(args);
         rank = MPI.COMM_WORLD.Rank();
         commSize = MPI.COMM_WORLD.Size();
 
         //getting the numbers from parameters in the command line
-        clusterCount = Integer.parseInt(args[6]);
-        siteCount = Integer.parseInt(args[7]);
+        clusterCount = Integer.parseInt(args[8]);
+        siteCount = Integer.parseInt(args[9]);
         clusters = new ArrayList<Cluster>();
         sitePoints = new ArrayList<Site>();
         //[id1, lat1, long1, id2, lat2, long2, id3, lat3, long3,...]
@@ -190,7 +183,7 @@ public class DistributedComputation {
                 updateFlagsChunk[i / 3] = initialLat != clusterElements[i + 1] || initialLong != clusterElements[i + 2];
             }
 
-            MPI.COMM_WORLD.Allgatherv(clusterElements, 0, clusterElements.length, MPI.DOUBLE, clusterBuffer, 0, clusterChunkSizes, clusterDispls, MPI.DOUBLE);
+            MPI.COMM_WORLD.Gatherv(clusterElements, 0, clusterElements.length, MPI.DOUBLE, clusterBuffer, 0, clusterChunkSizes, clusterDispls, MPI.DOUBLE, 0);
 
             //STOPPING CONDITION
             MPI.COMM_WORLD.Gatherv(updateFlagsChunk, 0, flagChunks[rank], MPI.BOOLEAN, updateFlags, 0, flagChunks, flagDispls, MPI.BOOLEAN, 0);
@@ -258,7 +251,7 @@ public class DistributedComputation {
             }
 
 
-            /*
+
             // GUI SETUP
             Window window = new Window(args);
             MapLoader.paintClusters(clusters, sitePoints, window.getMap());
@@ -269,194 +262,10 @@ public class DistributedComputation {
             MapLoader.paintClusters(clusters, sitePoints, window.getMap());
             window.getMapPanel().updateUI();
 
-             */
+
         }
 
         MPI.Finalize();
-    }
-
-    public static class Cluster {
-        private Site centroid;
-        private ArrayList<Site> sites;
-        private final int clusterID;
-        private final Color color;
-
-
-        public Cluster(Site initial, Color color, int id) {
-            this.centroid = new Site(initial.getLatitude(), initial.getLongitude(), 0, -1);
-            this.sites = new ArrayList<>();
-            this.clusterID = id;
-            this.color = color;
-
-        }
-
-        public Site getCentroid() {
-            return centroid;
-        }
-
-        public ArrayList<Site> getSites() {
-            return sites;
-        }
-
-        public int getClusterID() {
-            return clusterID;
-        }
-
-        public Color getColor() {
-            return color;
-        }
-
-        public double getWeight() { return this.centroid.getWeight();}
-
-        public void setWeight(double weight) {
-            this.centroid.setWeight(weight);
-        }
-
-        public void setSites(ArrayList<Site> sites) {this.sites = sites;}
-
-        public synchronized void addSite(Site site) {
-                this.sites.add(site);
-        }
-
-        //weighted mean calculation for updating the centroid of cluster
-        public boolean updateCentroid() {
-            Site initialCentroid = new Site(this.getCentroid().getLatitude(), this.centroid.getLongitude(), this.centroid.getWeight(), this.centroid.getSiteID());
-            if(sites.size() == 0) return false;
-
-            double sumX = 0, sumY = 0, weight = 0;
-            for (Site site: sites) {
-                    sumX += site.getLatitude() * site.getWeight();
-                    sumY += site.getLongitude() * site.getWeight();
-                    weight += site.getWeight();
-            }
-            this.centroid = new Site(sumX / weight, sumY / weight, weight, -1);
-
-            return initialCentroid.getLatitude() != this.centroid.getLatitude() || initialCentroid.getLongitude() != this.centroid.getLongitude();
-        }
-
-    }
-
-    public static class Site {
-        private double latitude,
-                longitude;
-        private double weight;
-        private int clusterID;
-        private final int siteID;
-
-        public Site(double latitude, double longitude, double w, int siteID) {
-            this.latitude = latitude;
-            this.longitude = longitude;
-            this.weight = w;
-            this.siteID = siteID;
-        }
-
-
-        public double getWeight() {
-            return weight;
-        }
-
-        public double getLatitude() {
-            return latitude;
-        }
-
-        public double getLongitude() {
-            return longitude;
-        }
-
-        public int getClusterID() {
-            return clusterID;
-        }
-
-        public int getSiteID() {
-            return siteID;
-        }
-
-        public void setClusterID(int clusterID) {
-            this.clusterID = clusterID;
-        }
-
-        public void setLatitude(double latitude) {
-            this.latitude = latitude;
-        }
-
-        public void setLongitude(double lon) {
-            this.longitude = lon;
-        }
-
-        public void setWeight(double w) {
-            this.weight = w;
-        }
-
-        public String toString() {
-            return "(" + getLatitude() + ", " + getLongitude() + ")";
-        }
-
-    }
-
-    public static class SiteLoader {
-        //private int siteCount;
-
-        private static final SiteLoader instance = new SiteLoader();
-
-        public SiteLoader() {
-        }
-
-        static SiteLoader getInstance() {return instance;}
-
-        public ArrayList<Site> loadSites(int siteCount) {
-            ArrayList<Site> sites = new ArrayList<>();
-            JSONParser parser = new JSONParser();
-            int siteID;
-
-            try{
-                String file = Objects.requireNonNull(SiteLoader.class.getClassLoader().getResource("sites.json")).getFile();
-                JSONArray jsonArray = (JSONArray) parser.parse(new FileReader(file));
-                Random random = new Random(10);
-
-                double minLat = Double.MAX_VALUE, maxLat = Double.MIN_VALUE,
-                        minLng = Double.MAX_VALUE, maxLng = Double.MIN_VALUE,
-                        maxCapacity = Double.MIN_VALUE;
-                Iterator<JSONObject> iterator = jsonArray.iterator();
-
-                siteID = 0;
-                while(sites.size() < siteCount && sites.size() < jsonArray.size()){
-                    JSONObject element = (JSONObject) jsonArray.get(random.nextInt(jsonArray.size()));
-                    double lat = parseDouble(element.get("la").toString());
-                    if (lat < minLat) minLat = lat;
-                    if (lat > maxLat) maxLat = lat;
-                    double lng = parseDouble(element.get("lo").toString());
-                    if (lng < minLng) minLng = lng;
-                    if (lng > maxLng) maxLng = lng;
-                    double capacity = parseDouble(element.get("capacity").toString());
-                    if (capacity > maxCapacity) maxCapacity = capacity;
-                    Site site = new Site(
-                            lat,
-                            lng,
-                            capacity,
-                            siteID++);
-                    sites.add(site);
-                }
-
-                //in case more sites needed than in databse, generating random sites
-                siteCount -= sites.size();
-                 while(siteCount > 0) {
-                    double capacity = Double.MIN_VALUE + random.nextFloat() * 100;
-                    //System.out.println("weight to insert: " + capacity);
-                    Site site = new Site(
-                            minLat + random.nextFloat() * (maxLat - minLat),
-                            minLng + random.nextFloat() * (maxLng - minLng),
-                            1,
-                            siteID
-                    );
-                    sites.add(site);
-                    siteCount--;
-                }
-
-            } catch (ParseException | IOException e) {
-                e.printStackTrace();
-            }
-            return sites;
-        }
     }
 }
 

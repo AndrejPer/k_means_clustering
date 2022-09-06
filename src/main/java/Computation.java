@@ -55,7 +55,7 @@ public class Computation {
         //add sites at given indexes as initial clusters
         int id = 0;
         for (Integer i: randInts) {
-            clusters.add(new Cluster(sitePoints.get(i), id++)); //adding color blue as default
+            clusters.add(new Cluster(sitePoints.get(i), Color.black, id++)); //adding color blue as default
         }
 
 

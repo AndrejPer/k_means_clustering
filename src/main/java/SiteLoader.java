@@ -28,9 +28,9 @@ public class SiteLoader {
         int siteID = 0;
 
         try{
-            String file = Objects.requireNonNull(SiteLoader.class.getClassLoader().getResource("sites.json")).getFile();
+            //String file = Objects.requireNonNull(SiteLoader.class.getClassLoader().getResource("sites.json")).getFile();
             //System.out.println(file);
-            JSONArray jsonArray = (JSONArray) parser.parse(new FileReader(file));
+            JSONArray jsonArray = (JSONArray) parser.parse(new FileReader("/Users/Andrej/Documents/Fac/PROG_III/k_means_clustering/src/main/resources/sites.json"));
             Random random = new Random(10);
 
             double minLat = Double.MAX_VALUE, maxLat = Double.MIN_VALUE,
