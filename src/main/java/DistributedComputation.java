@@ -56,7 +56,7 @@ public class DistributedComputation {
         flagDispls = new int[commSize];
 
         int chunkCounter = 0;
-        int remaining = clusterChunkSize == 0 ? clusterCount : clusterCount % clusterChunkSize;
+        int remaining = clusterChunkSize == 0 ? clusterCount : clusterCount % commSize;
         //making varying chunk size
         for (int i = 0; i < commSize; i++) {
             clusterChunkSizes[i] = clusterChunkSize * 3;
@@ -76,7 +76,7 @@ public class DistributedComputation {
         siteChunkSizes = new int[commSize];
         siteDispls = new int[commSize];
         chunkCounter = 0;
-        remaining = siteChunkSize == 0 ? siteCount : siteCount % siteChunkSize;
+        remaining = siteChunkSize == 0 ? siteCount : siteCount % commSize;
         //making varying chunk size
         for (int i = 0; i < commSize; i++) {
             siteChunkSizes[i] = siteChunkSize * 5;
@@ -239,8 +239,8 @@ public class DistributedComputation {
                 clusters.add(cluster);
             }
 
-            int clusterID = 0;
-            double weight = 0;
+            int clusterID;
+            double weight;
             int[] clusterWeights = new int[clusterCount];
             for (int i = 0; i < siteBuffer.length; i += 5) {
                 clusterID = (int) siteBuffer[i + 4];
@@ -331,8 +331,7 @@ public class DistributedComputation {
             }
             this.centroid = new Site(sumX / weight, sumY / weight, weight, -1);
 
-            if(initialCentroid.getLatitude() != this.centroid.getLatitude() || initialCentroid.getLongitude() != this.centroid.getLongitude()) return true;
-            return false;
+            return initialCentroid.getLatitude() != this.centroid.getLatitude() || initialCentroid.getLongitude() != this.centroid.getLongitude();
         }
 
     }
