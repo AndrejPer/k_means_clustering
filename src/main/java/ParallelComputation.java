@@ -22,7 +22,7 @@ public class ParallelComputation {
         assignmentFlags = new boolean[siteCount];
         siteCount = site;
         clusters = new ArrayList<>();
-        processorCount = Runtime.getRuntime().availableProcessors();
+        processorCount = 20; //Runtime.getRuntime().availableProcessors();
         changeFlags = new boolean[processorCount];
         this.executorBind = Executors.newFixedThreadPool(processorCount);
         this.executorCluster = Executors.newFixedThreadPool(clusterCount);
@@ -54,7 +54,7 @@ public class ParallelComputation {
             randInts.add(rand.nextInt(sitePoints.size()));
         }
 
-        /* GUI RELATED COLOR SETTING
+        /* GUI-RELATED COLOR SETTING
         //create a set of colors of corresponding size for coloring the clusters
         HashSet<Color> colors = new HashSet<>();
         for (int i = 0; i < clusterCount; i++) {
@@ -88,8 +88,10 @@ public class ParallelComputation {
 
              //re-setting update flags to false
              Arrays.fill(changeFlags, false);
+
              //assignment step
              bindCluster();
+
              //stopping condition check here
              changed = false;
              for (boolean changeFlag : changeFlags) {
@@ -101,7 +103,7 @@ public class ParallelComputation {
 
              //only in case changes happened in the assignment step
              if (changed) {
-                 //loop through sites sequentially and add one by one
+                 //loop through sites sequentially and add one by one to avoid race condition
                  for (Site site : sitePoints) {
                      clusters.get(site.getClusterID()).addSite(site);
                  }
@@ -126,13 +128,13 @@ public class ParallelComputation {
 
     void bindCluster() {
         CountDownLatch barrierBind = new CountDownLatch(processorCount);
-        //re-initializing cluster
+        //re-initializing cluster's site array
         for (Cluster cluster: clusters) {
             cluster.setSites(new ArrayList<>());
         }
         //assignment
         for(int t = 0; t < processorCount; t++ ) {
-            BindClusterRunnable bindClusterRunnable = new BindClusterRunnable(sitePoints, clusters, barrierBind, t * chunkSize, Math.min((t + 1) * chunkSize, siteCount), t); //TODO fix
+            BindClusterRunnable bindClusterRunnable = new BindClusterRunnable(sitePoints, clusters, barrierBind, t * chunkSize, Math.min((t + 1) * chunkSize, siteCount), t);
             executorBind.execute(bindClusterRunnable);
         }
         try {

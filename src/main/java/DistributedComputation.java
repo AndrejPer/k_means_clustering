@@ -10,7 +10,7 @@ public class DistributedComputation {
     private static int clusterCount, siteCount, clusterChunkSize, siteChunkSize, time, loopCounter, commSize, rank;
     private static double[] clusterBuffer, siteBuffer;
     private static int[] clusterChunkSizes, clusterDispls, siteChunkSizes, siteDispls, flagChunks, flagDispls;
-    private static boolean[] updateFlags;
+    private static boolean[] updateFlags, continuing;
     private static Timestamp start, end;
 
 
@@ -23,64 +23,8 @@ public class DistributedComputation {
         //getting the numbers from parameters in the command line
         clusterCount = Integer.parseInt(args[8]);
         siteCount = Integer.parseInt(args[9]);
-        clusters = new ArrayList<Cluster>();
-        sitePoints = new ArrayList<Site>();
-        //[id1, lat1, long1, id2, lat2, long2, id3, lat3, long3,...]
-        clusterBuffer = new double[3 * clusterCount];
-        //[id1, lat1, long1, w1, clusterID1, id2, lat2, long2, w2, clusterID2, ...]
-        siteBuffer = new double[5 * siteCount];
-        updateFlags = new boolean[clusterCount];
 
-
-        //calculating the number of sites one process should deal with
-        //rounding up so no element left in case of division with weird numbers
-        siteChunkSize = siteCount / commSize;
-        clusterChunkSize = clusterCount / commSize;
-
-        //flag
-        boolean[] continuing = new boolean[1];
-        continuing[0] = false;
-
-
-        //preparations for varying length scatter and gather
-        clusterChunkSizes = new int[commSize];
-        clusterDispls = new int[commSize];
-        flagChunks = new int[commSize];
-        flagDispls = new int[commSize];
-
-        int chunkCounter = 0;
-        int remaining = clusterChunkSize == 0 ? clusterCount : clusterCount % commSize;
-        //making varying chunk size
-        for (int i = 0; i < commSize; i++) {
-            clusterChunkSizes[i] = clusterChunkSize * 3;
-            flagChunks[i] = clusterChunkSize;
-            if (remaining > 0) {
-                clusterChunkSizes[i] += 3;
-                flagChunks[i]++;
-                remaining--;
-            }
-
-            clusterDispls[i] = chunkCounter * 3;
-            flagDispls[i] = chunkCounter;
-            chunkCounter += flagChunks[i];
-        }
-
-
-        siteChunkSizes = new int[commSize];
-        siteDispls = new int[commSize];
-        chunkCounter = 0;
-        remaining = siteChunkSize == 0 ? siteCount : siteCount % commSize;
-        //making varying chunk size
-        for (int i = 0; i < commSize; i++) {
-            siteChunkSizes[i] = siteChunkSize * 5;
-            if (remaining > 0) {
-                siteChunkSizes[i] += 5;
-                remaining--;
-            }
-
-            siteDispls[i] = chunkCounter;
-            chunkCounter += siteChunkSizes[i];
-        }
+        prep();
 
         double[] siteElements = new double[siteChunkSizes[rank]];
         double[] clusterElements = new double[clusterChunkSizes[rank]];
@@ -88,53 +32,11 @@ public class DistributedComputation {
 
 
         if (rank == 0) {
-            //setting sets up
-            sitePoints = SiteLoader.getInstance().loadSites(siteCount);
-
-            //getting clusters up
-            Random rand = new Random(10);
-            HashSet<Integer> randInts = new HashSet<>();
-            //get random non-repeating indices
-            while (randInts.size() < clusterCount) {
-                randInts.add(rand.nextInt(sitePoints.size()));
-            }
-            //create a set of colors of corresponding size for coloring the clusters
-            HashSet<Color> colors = new HashSet<>();
-            for (int i = 0; i < clusterCount; i++) {
-                colors.add(new Color(rand.nextFloat(), rand.nextFloat(), rand.nextFloat()));
-            }
-            //add sites at given indexes as initial clusters
-            Iterator<Color> colorIterator = colors.iterator();
-            int clusterID = 0;
-            for (Integer i : randInts) {
-                clusters.add(new Cluster(sitePoints.get(i), colorIterator.next(), clusterID++));
-            }
-            //System.out.println("site size " + sitePoints.size());
-
-            //SERIALIZE
-            //turning cluster and site instances into "triples" and "quintuples"
-            //[id1, lat1, long1, id2, lat2, long2, id3, lat3, long3,...]
-            for (Cluster cluster : clusters
-            ) {
-                int id = cluster.getClusterID();
-                clusterBuffer[id * 3] = cluster.getClusterID();
-                clusterBuffer[id * 3 + 1] = cluster.getCentroid().getLatitude();
-                clusterBuffer[id * 3 + 2] = cluster.getCentroid().getLongitude();
-            }
-            //[lat1, long1, clusterID1, weight1, id1, lat2, long2, clusterID2, weight2, id2 ...]
-            for (int i = 0; i < siteCount; i++) {
-                Site site = sitePoints.get(i);
-                siteBuffer[i * 5] = site.getSiteID();
-                siteBuffer[i * 5 + 1] = site.getLatitude();
-                siteBuffer[i * 5 + 2] = site.getLongitude();
-                siteBuffer[i * 5 + 3] = site.getWeight();
-                siteBuffer[i * 5 + 4] = site.getClusterID();
-            }
+            load();
+            start = new Timestamp(System.currentTimeMillis());
         }
 
-        start = new Timestamp(System.currentTimeMillis());
 
-        MPI.COMM_WORLD.Barrier();
         do{
             if(rank == 0) loopCounter++;
             updateFlags = new boolean[clusterCount];
@@ -151,7 +53,6 @@ public class DistributedComputation {
                 for (int j = 0; j < clusterBuffer.length; j += 3) {
                         double distance = Math.sqrt(Math.pow((clusterBuffer[j + 1] - siteElements[i + 1]), 2)) +
                                 Math.sqrt(Math.pow((clusterBuffer[j + 2] - siteElements[i + 2]), 2));
-                        //System.out.println("in " + rank + ", distance between site " + i/5 + " and cluster " + j/3 + " is " + distance);
                         if (distance < min) {
                             min = distance;
                             minClusterID = j / 3;
@@ -266,6 +167,113 @@ public class DistributedComputation {
         }
 
         MPI.Finalize();
+    }
+
+    static void prep() {
+        clusters = new ArrayList<Cluster>();
+        sitePoints = new ArrayList<Site>();
+        //[id1, lat1, long1, id2, lat2, long2, id3, lat3, long3,...]
+        clusterBuffer = new double[3 * clusterCount];
+        //[id1, lat1, long1, w1, clusterID1, id2, lat2, long2, w2, clusterID2, ...]
+        siteBuffer = new double[5 * siteCount];
+        updateFlags = new boolean[clusterCount];
+
+
+        //calculating the number of sites one process should deal with
+        //rounding up so no element left in case of division with weird numbers
+        siteChunkSize = siteCount / commSize;
+        clusterChunkSize = clusterCount / commSize;
+
+        continuing = new boolean[1];
+
+
+        //preparations for varying length scatter and gather
+        clusterChunkSizes = new int[commSize];
+        clusterDispls = new int[commSize];
+        flagChunks = new int[commSize];
+        flagDispls = new int[commSize];
+
+        int chunkCounter = 0;
+        int remaining = clusterChunkSize == 0 ? clusterCount : clusterCount % commSize;
+        //making varying chunk size
+        for (int i = 0; i < commSize; i++) {
+            clusterChunkSizes[i] = clusterChunkSize * 3;
+            flagChunks[i] = clusterChunkSize;
+            if (remaining > 0) {
+                clusterChunkSizes[i] += 3;
+                flagChunks[i]++;
+                remaining--;
+            }
+
+            clusterDispls[i] = chunkCounter * 3;
+            flagDispls[i] = chunkCounter;
+            chunkCounter += flagChunks[i];
+        }
+
+
+        siteChunkSizes = new int[commSize];
+        siteDispls = new int[commSize];
+        chunkCounter = 0;
+        remaining = siteChunkSize == 0 ? siteCount : siteCount % commSize;
+        //making varying chunk size
+        for (int i = 0; i < commSize; i++) {
+            siteChunkSizes[i] = siteChunkSize * 5;
+            if (remaining > 0) {
+                siteChunkSizes[i] += 5;
+                remaining--;
+            }
+
+            siteDispls[i] = chunkCounter;
+            chunkCounter += siteChunkSizes[i];
+        }
+
+    }
+
+    static void load() {
+        //setting sets up
+        System.out.println("Working Directory = " + System.getProperty("user.dir"));
+        sitePoints = SiteLoader.getInstance().loadSites(siteCount);
+
+        //getting clusters up
+        Random rand = new Random(10);
+        HashSet<Integer> randInts = new HashSet<>();
+        //get random non-repeating indices
+        while (randInts.size() < clusterCount) {
+            randInts.add(rand.nextInt(sitePoints.size()));
+        }
+        //create a set of colors of corresponding size for coloring the clusters
+        HashSet<Color> colors = new HashSet<>();
+        for (int i = 0; i < clusterCount; i++) {
+            colors.add(new Color(rand.nextFloat(), rand.nextFloat(), rand.nextFloat()));
+        }
+        //add sites at given indexes as initial clusters
+        Iterator<Color> colorIterator = colors.iterator();
+        int clusterID = 0;
+        for (Integer i : randInts) {
+            clusters.add(new Cluster(sitePoints.get(i), colorIterator.next(), clusterID++));
+        }
+        //System.out.println("site size " + sitePoints.size());
+
+        //SERIALIZE
+        //turning cluster and site instances into "triples" and "quintuples"
+        //[id1, lat1, long1, id2, lat2, long2, id3, lat3, long3,...]
+        for (Cluster cluster : clusters
+        ) {
+            int id = cluster.getClusterID();
+            clusterBuffer[id * 3] = cluster.getClusterID();
+            clusterBuffer[id * 3 + 1] = cluster.getCentroid().getLatitude();
+            clusterBuffer[id * 3 + 2] = cluster.getCentroid().getLongitude();
+        }
+        //[lat1, long1, clusterID1, weight1, id1, lat2, long2, clusterID2, weight2, id2 ...]
+        for (int i = 0; i < siteCount; i++) {
+            Site site = sitePoints.get(i);
+            siteBuffer[i * 5] = site.getSiteID();
+            siteBuffer[i * 5 + 1] = site.getLatitude();
+            siteBuffer[i * 5 + 2] = site.getLongitude();
+            siteBuffer[i * 5 + 3] = site.getWeight();
+            siteBuffer[i * 5 + 4] = site.getClusterID();
+        }
+
     }
 }
 

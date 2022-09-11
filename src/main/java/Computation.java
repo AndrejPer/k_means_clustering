@@ -71,12 +71,12 @@ public class Computation {
          do {
              //initializing "changed" flag to false at the beginning of each iteration
              changed = false;
-             if(loopCounter > 10000) break;
+             //if(loopCounter > 10000) break;
              loopCounter++;
              changed = bindCluster();
 
              //update step
-             for (Cluster cluster: clusters) cluster.updateCentroid();
+             if(changed) for (Cluster cluster: clusters) cluster.updateCentroid();
 
         } while(changed);
 
