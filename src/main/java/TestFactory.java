@@ -42,7 +42,7 @@ public class TestFactory {
             double totalTime = 0, totalMemory = 0;
             for (int j = 0; j < numberOfRepetitions; j++) {
                 ParallelComputation parallel = new ParallelComputation(clusterFixed, siteCount);
-                parallel.compute();
+                parallel.compute(args);
 
                 file.writeNext(new String[]{
                         Integer.toString(id),
@@ -84,7 +84,7 @@ public class TestFactory {
             double totalTime = 0, totalMemory = 0;
             for (int j = 0; j < numberOfRepetitions; j++) {
                 ParallelComputation parallel = new ParallelComputation(clusterCount, siteFixed);
-                parallel.compute();
+                parallel.compute(args);
                 totalTime += parallel.getTime();
                 totalMemory += parallel.getMemory();
 

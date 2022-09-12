@@ -40,7 +40,7 @@ public class ParallelComputation {
     public long getMemory() {return memory;}
 
     //computation
-    public void compute() {
+    public void compute(String[] args) {
         //initializing data points
         sitePoints = SiteLoader.getInstance().loadSites(siteCount);
 
@@ -54,22 +54,21 @@ public class ParallelComputation {
             randInts.add(rand.nextInt(sitePoints.size()));
         }
 
-        /* GUI-RELATED COLOR SETTING
+        // GUI-RELATED COLOR SETTING
         //create a set of colors of corresponding size for coloring the clusters
         HashSet<Color> colors = new HashSet<>();
         for (int i = 0; i < clusterCount; i++) {
             colors.add(new Color(rand.nextFloat(), rand.nextFloat(), rand.nextFloat()));
         }
-
         Iterator<Color> colorIterator = colors.iterator();
-         */
 
 
         //add sites at given indexes as initial clusters
         int id = 0;
         for (Integer i: randInts) {
-            clusters.add(new Cluster(sitePoints.get(i), Color.black, id++));
+            clusters.add(new Cluster(sitePoints.get(i), colorIterator.next(), id++));
         }
+
 
         //calculating k means
         loopCounter = 0;
@@ -84,13 +83,13 @@ public class ParallelComputation {
 
          do {
              loopCounter++;
-             if(loopCounter > 1000) break;
 
              //re-setting update flags to false
              Arrays.fill(changeFlags, false);
 
              //assignment step
              bindCluster();
+
 
              //stopping condition check here
              changed = false;
@@ -107,9 +106,12 @@ public class ParallelComputation {
                  for (Site site : sitePoints) {
                      clusters.get(site.getClusterID()).addSite(site);
                  }
+
                  //update step
                  updateCentroid();
              }
+
+
 
          } while(changed);
 
@@ -124,6 +126,8 @@ public class ParallelComputation {
         time = (int) (end.getTime() - start.getTime());
         executorBind.shutdown();
         executorCluster.shutdown();
+
+
     }
 
     void bindCluster() {

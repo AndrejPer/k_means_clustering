@@ -37,7 +37,7 @@ public class Window extends JFrame {
         JTextField clusterNumber = new JTextField("3");
         clusterNumber.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         JLabel clusterLabel = new JLabel("Number of clusters:");
-        JTextField siteNumber = new JTextField("1000");
+        JTextField siteNumber = new JTextField("50");
         siteNumber.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         JLabel siteLabel = new JLabel("Number of sites:");
 

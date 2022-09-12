@@ -44,7 +44,7 @@ public class ListenerParameters implements ActionListener {
 
             else if(par.isSelected()) {
                 ParallelComputation parallelComputation = new ParallelComputation(clusterCount, siteCount);
-                parallelComputation.compute();
+                parallelComputation.compute(args);
                 MapLoader.paintClusters(parallelComputation.getClusters(), parallelComputation.getSetPoints(), mapViewer);
                 mapPanel.updateUI();
                 report.setText("Clusters calculated in: " + parallelComputation.getTime() + "ms. Performed " + parallelComputation.getLoopCounter() + " loops.");
