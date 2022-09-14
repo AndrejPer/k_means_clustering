@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ParallelComputation {
-
+    static double r = 6371.0; //Earth's radius
     private ArrayList<Site> sitePoints;
     private final ArrayList<Cluster> clusters;
     private int clusterCount, siteCount, processorCount, chunkSize, time, loopCounter;
@@ -169,12 +169,18 @@ public class ParallelComputation {
             for(int i = start; i < end; i++) {
                 Site site = sitePoints.get(i);
                 Cluster currentCluster = clusters.get(site.getClusterID());
-                double min = Double.MAX_VALUE;
                 Cluster minCluster = clusters.get(0);
+                double min = Double.MAX_VALUE;
+                double phi1 = site.getLatitude() * Math.PI / 180.0, phi2, //latitudes
+                        lambda1 = site.getLongitude() * Math.PI / 180.0, lambda2; //longitudes
                 for (Cluster cluster: clusters) {
-                    double distance = Math.sqrt(Math.pow((cluster.getCentroid().getLatitude() - site.getLatitude()), 2.0) + Math.pow((cluster.getCentroid().getLongitude() - site.getLongitude()), 2.0));
-                    if(distance < min) {
-                        min = distance;
+                    phi2 = cluster.getCentroid().getLatitude() * Math.PI / 180.0;
+                    lambda2 = cluster.getCentroid().getLongitude() * Math.PI / 180.0;
+                    //double distance = Math.sqrt(Math.pow((cluster.getCentroid().getLatitude() - site.getLatitude()), 2.0) + Math.pow((cluster.getCentroid().getLongitude() - site.getLongitude()), 2.0));
+                    double haversine = 2 * r * Math.asin(Math.sqrt(Math.pow(Math.sin((phi2 - phi1)/2), 2) + Math.cos(phi1) * Math.cos(phi2) * Math.pow(Math.sin(lambda2 - lambda1), 2)));
+
+                    if(haversine < min) {
+                        min = haversine;
                         minCluster = cluster;
                     }
                 }

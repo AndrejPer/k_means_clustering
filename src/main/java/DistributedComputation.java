@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.util.*;
 
 public class DistributedComputation {
+    static double r = 6371.0; //Earth's radius
     static ArrayList<Site> sitePoints;
     static ArrayList<Cluster> clusters;
     private static int time, rank, commSize, siteCount, clusterCount;
@@ -133,19 +134,26 @@ public class DistributedComputation {
 
                 double minClusterID = -1.0;
                 double min = Double.MAX_VALUE;
+                double phi1 = siteElements[i + 1] * Math.PI / 180.0, phi2, //latitudes
+                        lambda1 = siteElements[i + 2] * Math.PI / 180.0, lambda2; //longitudes
                 for (int j = 0; j < centroidBuffer.length; j += 3) {
-                    double distance = Math.sqrt(Math.pow((centroidBuffer[j + 1] - siteElements[i + 1]), 2) + Math.pow((centroidBuffer[j + 2] - siteElements[i + 2]), 2));
-                    if (distance < min) {
-                        min = distance;
+                    if(siteElements[i] == 1.0) System.out.println("centorid: " + centroidBuffer[j]);
+                    phi2 = centroidBuffer[j + 1] * Math.PI / 180.0;
+                    lambda2 = centroidBuffer[j + 2] * Math.PI / 180.0;
+                    //double distance = Math.sqrt(Math.pow((centroidBuffer[j + 1] - siteElements[i + 1]), 2) + Math.pow((centroidBuffer[j + 2] - siteElements[i + 2]), 2));
+                    double haversine = 2 * r * Math.asin(Math.sqrt(Math.pow(Math.sin((phi2 - phi1)/2), 2) + Math.cos(phi1) * Math.cos(phi2) * Math.pow(Math.sin(lambda2 - lambda1), 2)));
+                    if(siteElements[i] == 1.0) System.out.println(haversine);
+                    if (haversine < min) {
+                        min = haversine;
                         minClusterID = j / 3.0;
                     }
-
+                    if(siteElements[i] == 1.0) System.out.println("min is: " + min);
+                    if(siteElements[i] == 1.0) System.out.println(haversine);
                 }
+
                 if(!flag[0]) {
                     if(siteElements[i + 4] != minClusterID) flag[0] = true;
                 }
-
-
 
                 siteElements[i + 4] = minClusterID;
 
@@ -165,7 +173,7 @@ public class DistributedComputation {
                 }
             }
             MPI.COMM_WORLD.Bcast(continuing, 0, 1, MPI.BOOLEAN, 0);
-            if(!continuing[0]) break;
+            if(!continuing[0] || loopCounter > 2 ) break;
 
             //UPDATE STEP
             MPI.COMM_WORLD.Scatterv(centroidBuffer, 0, centroidChunkSizes, centroidDispls, MPI.DOUBLE, clusterElements, 0, centroidChunkSizes[rank], MPI.DOUBLE, 0);

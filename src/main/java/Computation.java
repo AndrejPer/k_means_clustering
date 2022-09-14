@@ -3,11 +3,13 @@ import java.sql.Timestamp;
 import java.util.*;
 
 public class Computation {
+    static double r = 6371.0; //Earth's radius
     ArrayList<Site> sitePoints;
     int clusterCount, siteCount, loopCounter;
     ArrayList<Cluster> clusters;
     private int time;
     private long memory;
+
 
     public Computation(int cluster,int site) {
         clusterCount = cluster;
@@ -41,21 +43,20 @@ public class Computation {
         while(randInts.size() < clusterCount) {
             randInts.add(rand.nextInt(sitePoints.size()));
         }
-        /* GUI RELATED COLORING OF CLUSTERS
+        //GUI RELATED COLORING OF CLUSTERS
         //create a set of colors of corresponding size for coloring the clusters
         HashSet<Color> colors = new HashSet<>();
         for (int i = 0; i < clusterCount; i++) {
             colors.add(new Color(rand.nextFloat(), rand.nextFloat(), rand.nextFloat()));
         }
-
         Iterator<Color> colorIterator = colors.iterator();
-        */
+
 
 
         //add sites at given indexes as initial clusters
         int id = 0;
         for (Integer i: randInts) {
-            clusters.add(new Cluster(sitePoints.get(i), Color.black, id++)); //adding color blue as default
+            clusters.add(new Cluster(sitePoints.get(i), colorIterator.next(), id++)); //adding color blue as default
         }
 
 
@@ -80,8 +81,8 @@ public class Computation {
 
         } while(changed);
 
-        //TODO check if start of memory measuring is ok
-        //--------------- memory start
+        //TODO check if end of memory measuring is ok
+        //--------------- memory end
         long endMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         //-------------------------------
 
@@ -102,11 +103,16 @@ public class Computation {
             double min = Double.MAX_VALUE;
             Cluster currentCluster = clusters.get(site.getClusterID());
             Cluster minCluster = currentCluster;
+            double phi1 = site.getLatitude() * Math.PI / 180.0, phi2, //latitudes
+                    lambda1 = site.getLongitude() * Math.PI / 180.0, lambda2; //longitudes
             for (Cluster cluster: clusters) {
-                double distance = Math.sqrt(Math.pow((cluster.getCentroid().getLatitude() - site.getLatitude()), 2.0) + Math.pow((cluster.getCentroid().getLongitude() - site.getLongitude()), 2.0));
+                phi2 = cluster.getCentroid().getLatitude() * Math.PI / 180.0;
+                lambda2 = cluster.getCentroid().getLongitude() * Math.PI / 180.0;
+                //double distance = Math.sqrt(Math.pow((cluster.getCentroid().getLatitude() - site.getLatitude()), 2.0) + Math.pow((cluster.getCentroid().getLongitude() - site.getLongitude()), 2.0));
+                double haversine = 2 * r * Math.asin(Math.sqrt(Math.pow(Math.sin((phi2 - phi1)/2), 2) + Math.cos(phi1) * Math.cos(phi2) * Math.pow(Math.sin(lambda2 - lambda1), 2)));
 
-                if(distance < min) {
-                    min = distance;
+                if(haversine < min) {
+                    min = haversine;
                     minCluster = cluster;
                 }
             }
